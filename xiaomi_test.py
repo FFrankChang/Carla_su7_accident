@@ -201,9 +201,19 @@ class Main_Car_Control:
         self.takeover_status  = False
         self.background_vehicle = None
         self.background_gnss_sensor = None
+        
+        # Initialize sound effects
+        self.wind_sound = pygame.mixer.Sound(os.path.join("resource", "wind.mp3"))
+        self.engine_sound = pygame.mixer.Sound(os.path.join("resource", "engine.mp3"))
+        self.wind_sound.set_volume(0)
+        self.engine_sound.set_volume(0)
+        self.wind_channel = pygame.mixer.Channel(1)
+        self.engine_channel = pygame.mixer.Channel(2)
+        self.wind_channel.play(self.wind_sound, loops=-1)
+        self.engine_channel.play(self.engine_sound, loops=-1)
 
-        self.gnss_sensor = GnssSensor(self.vehicle)  # Initialize GNSS sensor
-        self.imu_sensor = IMUSensor(self.vehicle)    # Initialize IMU sensor
+        self.gnss_sensor = GnssSensor(self.vehicle)  
+        self.imu_sensor = IMUSensor(self.vehicle)   
         self.vehicle_data =  [{
                     "frameId": 0,
                     "name": "Main_car",
@@ -251,13 +261,23 @@ class Main_Car_Control:
             self.vehicle_data[0]["speed"] = self.speed
             self.vehicle_data[0]["accx"] = self.acc
 
+            # Update wind sound volume based on speed
+            wind_volume = min(1.0, self.speed / 120.0)
+            self.wind_sound.set_volume(wind_volume)
+            
+            # Update engine sound volume based on acceleration when in manual mode
+            if self.autopilot_flag == False:
+                engine_volume = min(1.0, max(0.0, self.acc))
+                self.engine_sound.set_volume(engine_volume)
+            else:
+                self.engine_sound.set_volume(0)
+
             if int(time.time() * 10) % 10 == 0:
                 VehicleDataPublisher.add_data(self.vehicle_data)  
 
             if self.autopilot_flag == False:
                 car_control(self.vehicle, self.steerCmd, self.acc, self.brake)
                 # print( self.steerCmd, self.acc, self.brake)
-    # def check_finish(self):
 
     def check_takeover_conditions(self):
         location = self.vehicle.get_location()
@@ -275,6 +295,9 @@ class Main_Car_Control:
 
     def stop_scenario(self):
         self.running = False
+        # Stop sound effects
+        self.wind_sound.set_volume(0)
+        self.engine_sound.set_volume(0)
         self.world.wait_for_tick()
         for vehicle in self.world.get_actors().filter('vehicle.*'):
             vehicle.apply_control(carla.VehicleControl(hand_brake=True, throttle=0.0))
@@ -397,7 +420,7 @@ if __name__ == '__main__':
     prop_model = blueprint_library.filter('*prop*')
     change_weather(world)
     pygame.init()
-    pygame.mixer.init()
+    pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
     threading.Thread(target=pedal_receiver).start()
     threading.Thread(target=parse_euler,daemon=True).start()
     destroy_all_vehicles_traffics(world)
