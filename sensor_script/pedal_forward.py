@@ -1,5 +1,6 @@
 import json
 import socket
+import os
 from hipnuc_acc import *
 from hipnuc_brake import *
 
@@ -38,10 +39,14 @@ def initial_direction(hip_module, calibration, sensor_key):
     max_angle = calibration[sensor_key]['max']
     return avg_angle < (min_angle + max_angle) / 2
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+acc_config_path = os.path.join(script_dir, 'config', 'config_acc.json')
+brake_config_path = os.path.join(script_dir, 'config', 'config_brake.json')
+calibration_path = os.path.join(script_dir, '..', 'sensor', 'pedal_calibration.json')
 
-hip_acc = hipnuc_acc(r'D:\Frank_projects\sensor_script\config\config_acc.json')
-hip_brake = hipnuc_brake(r'D:\Frank_projects\sensor_script\config\config_brake.json')
-config_file = r'D:\Frank_projects\sensor\pedal_calibration.json'
+hip_acc = hipnuc_acc(acc_config_path)
+hip_brake = hipnuc_brake(brake_config_path)
+config_file = calibration_path
 
 calibration = load_calibration(config_file)
 

@@ -2,6 +2,7 @@ import json
 from hipnuc_acc import *
 from hipnuc_brake import *
 import time
+import os
 
 def calibrate_pedals(hip_acc, hip_brake, duration=30):
     min_acc_angle = float('inf')
@@ -28,9 +29,15 @@ def calibrate_pedals(hip_acc, hip_brake, duration=30):
 
     return (min_acc_angle, max_acc_angle), (min_brake_angle, max_brake_angle)
 
-hip_acc = hipnuc_acc(r'D:\Frank_projects\sensor_script\config\config_acc.json')
-hip_brake = hipnuc_brake(r'D:\Frank_projects\sensor_script\config\config_brake.json')
-config_file = r'D:\Frank_projects\sensor\pedal_calibration.json'
+script_dir = os.path.dirname(os.path.abspath(__file__))
+acc_config_path = os.path.join(script_dir, 'config', 'config_acc.json')
+brake_config_path = os.path.join(script_dir, 'config', 'config_brake.json')
+calibration_path = os.path.join(script_dir, '..', 'sensor', 'pedal_calibration.json')
+
+hip_acc = hipnuc_acc(acc_config_path)
+hip_brake = hipnuc_brake(brake_config_path)
+config_file = calibration_path
+
 
 try:
     (acc_min, acc_max), (brake_min, brake_max) = calibrate_pedals(hip_acc, hip_brake)

@@ -8,8 +8,8 @@ from datetime import datetime
 import numpy as np
 import os
 import math
-from sensor.steering_angle import parse_euler, get_steering_angle
-from sensor.pedal import get_data,pedal_receiver
+from sensor_script.steering_angle import parse_euler, get_steering_angle
+from sensor_script.pedal import get_data,pedal_receiver
 
 system_fault = False
 init_location = carla.Location(x=-400, y=-31.5, z=15)

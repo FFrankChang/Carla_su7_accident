@@ -4,7 +4,6 @@ import pygame
 import weakref
 import random
 import time
-from datetime import datetime
 import numpy as np
 import os
 import math
@@ -20,8 +19,8 @@ import paho.mqtt.client as mqtt
 # https://ivwvideo.gambition.cn/hmi/xm-accident/img/1.jpg
 # https://ivwvideo.gambition.cn/hmi/xm-accident/img/0.jpg
 
-from sensor.steering_angle import parse_euler, get_steering_angle
-from sensor.pedal import get_data,pedal_receiver
+from sensor_script.steering_angle import parse_euler, get_steering_angle
+from sensor_script.pedal import get_data,pedal_receiver
 
 init_location = carla.Location(x=-400, y=-31.5, z=15)
 background_vehicle_location = carla.Location(x=-300, y=-15, z=15)
@@ -310,7 +309,7 @@ class Window:
         self.clock = pygame.time.Clock()
         self.size = 18
         self.fps = 90
-        self.font = pygame.font.Font(r"TTF\宋体.ttf", self.size)
+        self.font = pygame.font.SysFont(None, self.size)  
 
         self.blueprint_camera = blueprint_library.find('sensor.camera.rgb')
         self.blueprint_camera.set_attribute('image_size_x', f'{self.SCREEN_WIDTH}')
@@ -359,8 +358,9 @@ class Window:
     def draw_text(self, word, size, position, bold=False, color=(255, 0, 0)):
         font_key = (size, bold)
         if font_key not in self.fonts:
-            font = pygame.font.Font(r"TTF\宋体.ttf", size)
-            font.set_bold(bold)
+            font = pygame.font.SysFont(None, size) 
+            if bold:
+                font.set_bold(True)
             self.fonts[font_key] = font
         else:
             font = self.fonts[font_key]
