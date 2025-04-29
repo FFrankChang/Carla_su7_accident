@@ -19,8 +19,19 @@ import paho.mqtt.client as mqtt
 # https://ivwvideo.gambition.cn/hmi/xm-accident/img/1.jpg
 # https://ivwvideo.gambition.cn/hmi/xm-accident/img/0.jpg
 
-from sensor_script.steering_angle import parse_euler, get_steering_angle
-from sensor_script.pedal import get_data,pedal_receiver
+TEST_MODE = True  
+
+if not TEST_MODE:
+    try:
+        from sensor_script.steering_angle import parse_euler, get_steering_angle
+        from sensor_script.pedal import get_data, pedal_receiver
+        HARDWARE_AVAILABLE = True
+    except ImportError:
+        print("steering angle or pedal module import error")
+        TEST_MODE = True
+        HARDWARE_AVAILABLE = False
+else:
+    HARDWARE_AVAILABLE = False
 
 init_location = carla.Location(x=-400, y=-31.5, z=15)
 background_vehicle_location = carla.Location(x=-300, y=-15, z=15)
@@ -68,14 +79,16 @@ def change_weather(world):
     world.set_weather(weather)
 
 def get_sensor_data():
-    # return 0,0,0
-    K1 = 0.55
-    steer = get_steering_angle() / 450
-    steerCmd = K1 * math.tan(1.1 * steer)
-    acc,brake = get_data()
-    if acc > 0.1:
-        brake = 0
-    return steerCmd, acc, brake 
+    if TEST_MODE or not HARDWARE_AVAILABLE:
+        return 0, 0, 0
+    else:
+        K1 = 0.55
+        steer = get_steering_angle() / 450
+        steerCmd = K1 * math.tan(1.1 * steer)
+        acc, brake = get_data()
+        if acc > 0.1:
+            brake = 0
+        return steerCmd, acc, brake
 
 def car_control(vehicle, steer=0, throttle=1, brake=0):
     current_control = vehicle.get_control()
@@ -398,8 +411,12 @@ if __name__ == '__main__':
     change_weather(world)
     pygame.init()
     pygame.mixer.init()
-    threading.Thread(target=pedal_receiver).start()
-    threading.Thread(target=parse_euler,daemon=True).start()
+    if not TEST_MODE and HARDWARE_AVAILABLE:
+        try:
+            threading.Thread(target=pedal_receiver).start()
+            threading.Thread(target=parse_euler, daemon=True).start()
+        except Exception as e:
+            TEST_MODE = True
     destroy_all_vehicles_traffics(world)
     vehicle_traffic = Vehicle_Traffic(world)
     vehicle = vehicle_traffic.create_main_vehicle([init_location], vehicle_model="vehicle.tesla.model3")[0]
